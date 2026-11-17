@@ -32,7 +32,7 @@ import {
 
 import "./App.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "/api";
 
 const today = () => {
   const date = new Date();
@@ -105,11 +105,22 @@ function App() {
       maximumFractionDigits: 2,
     }).format(amount || 0);
 
-  // Fetch transactions
+  // Fetch transactions and ensure the demo has at least 20 records.
   const fetchTransactions = async () => {
     try {
-      const response = await axios.get(`${API_URL}/transactions`);
-      setTransactions(response.data.transactions || []);
+      let response = await axios.get(`${API_URL}/transactions`);
+      let records = response.data.transactions || [];
+
+      if (records.length < 20) {
+        const seedResponse = await axios.post(`${API_URL}/transactions/seed`);
+        if (seedResponse.data.added > 0) {
+          response = await axios.get(`${API_URL}/transactions`);
+          records = response.data.transactions || [];
+          setSuccess(`${seedResponse.data.added} sample records added successfully!`);
+        }
+      }
+
+      setTransactions(records);
       setError("");
     } catch (err) {
       console.error(err);
@@ -484,6 +495,14 @@ function App() {
               </button>
             );
           })}
+          <button
+            type="button"
+            className="nav-item"
+            onClick={handleLogout}
+          >
+            <LogOut size={19} />
+            Logout
+          </button>
         </nav>
       </aside>
 
@@ -1085,15 +1104,6 @@ function App() {
               <p>Currency: {profile.currency}</p>
             </section>
 
-            <section className="panel" style={{ marginTop: "25px" }}>
-              <h3>Account</h3>
-              <p>Manage your application session.</p>
-
-              <p>Signed in as {currentUser.email} ({currentUser.role}).</p>
-              <button className="add-button" onClick={handleLogout}>
-                <LogOut size={18} /> Logout
-              </button>
-            </section>
           </>
         ) : null}
       </main>

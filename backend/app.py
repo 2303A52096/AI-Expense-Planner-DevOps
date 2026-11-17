@@ -244,9 +244,7 @@ def get_current_user():
     if USE_MEMORY_DB:
         user = users.find_one({"_id": user_id})
     else:
-        from bson import ObjectId
-
-        user = users.find_one({"_id": ObjectId(user_id)})
+        user = users.find_one({"_id": user_id})
 
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -310,6 +308,62 @@ def add_transaction():
 
 
 # GET ALL TRANSACTIONS API
+
+@app.route("/api/transactions/seed", methods=["POST"])
+def seed_sample_transactions():
+    existing_count = transactions.count_documents({})
+
+    if existing_count >= 20:
+        return jsonify({
+            "message": "At least 20 transactions already exist.",
+            "added": 0,
+            "count": existing_count
+        }), 200
+
+    sample_data = [
+        ("income", 45000, "Salary", "Monthly salary", 1),
+        ("expense", 250, "Food", "Breakfast", 1),
+        ("expense", 680, "Food", "Family lunch", 2),
+        ("expense", 1200, "Travel", "Cab and auto fare", 2),
+        ("expense", 3500, "Shopping", "Clothing purchase", 3),
+        ("income", 5000, "Business", "Freelance payment", 4),
+        ("expense", 499, "Entertainment", "Movie tickets", 4),
+        ("expense", 850, "Health", "Pharmacy", 5),
+        ("expense", 1500, "Education", "Course materials", 6),
+        ("expense", 320, "Food", "Groceries", 7),
+        ("income", 2500, "Business", "Design payment", 8),
+        ("expense", 2200, "Travel", "Fuel", 9),
+        ("expense", 999, "Shopping", "Household items", 10),
+        ("expense", 450, "Food", "Dinner", 11),
+        ("expense", 700, "Entertainment", "Music subscription", 12),
+        ("income", 1500, "Other", "Cashback", 13),
+        ("expense", 1800, "Health", "Medical check-up", 14),
+        ("expense", 2400, "Education", "Books and stationery", 15),
+        ("expense", 560, "Food", "Groceries and snacks", 16),
+        ("expense", 1300, "Shopping", "Accessories", 17),
+    ]
+
+    needed = 20 - existing_count
+    now = datetime.now()
+    inserted = 0
+
+    for transaction_type, amount, category, description, days_ago in sample_data[:needed]:
+        transactions.insert_one({
+            "type": transaction_type,
+            "amount": float(amount),
+            "category": category,
+            "description": description,
+            "date": (now - timedelta(days=days_ago)).strftime("%Y-%m-%d"),
+            "created_at": now - timedelta(days=days_ago)
+        })
+        inserted += 1
+
+    return jsonify({
+        "message": "Sample transactions added successfully.",
+        "added": inserted,
+        "count": transactions.count_documents({})
+    }), 201
+
 @app.route("/api/transactions", methods=["GET"])
 def get_transactions():
     all_transactions = transactions.find().sort("created_at", -1)
@@ -404,4 +458,4 @@ def get_budgets():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=False)
