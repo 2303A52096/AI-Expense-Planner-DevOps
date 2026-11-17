@@ -1,0 +1,11 @@
+﻿.env
+.env.*
+!.env.example
+backend/venv/
+backend/.venv/
+frontend/node_modules/
+**/node_modules/
+**/__pycache__/
+*.pyc
+frontend/dist/
+backend/build/
